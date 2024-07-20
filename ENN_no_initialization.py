@@ -4,12 +4,18 @@ tf.random.set_seed(221)
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
+from copy import deepcopy
 import pandas as pd
 import os
 import time
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 import json
+from Ellipsoidal_layer_V5 import EllipsoidLayer
+from custom_ENN_layerV2 import ENNLayer
+import warnings
+warnings.filterwarnings("ignore")
+
 
 
 print(os.getcwd())
@@ -19,7 +25,7 @@ os.chdir('E:\Work\DS\Project\CNN Experiment')
 
 from custom_generator_and_checkpoint import DataFrameGenerator
 
-epochs = 20 # maximum epoch (set at 20 for paper)
+epochs = 20 # maximum epoch (set at 30 for paper)
 num_enn = 2
 num_ex = 10 # number of repeated experiments
 lr = 0.0002 # learning rate
@@ -28,7 +34,7 @@ train_test_splitted = True # if train test is splitted
 
 data = 'CIFAR100'
 backbone_model = 'ResNet18'
-classification_neuron = 'MP'
+classification_neuron = 'ENN_no_initialization'
 
 data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 BATCH_SIZE = 64 # train batch size (64 due to hardware limitation and accuracy is not a goal)
@@ -65,12 +71,13 @@ def create_model(n, input_shape, num_class, activation, lr):
     initializer = tf.keras.initializers.GlorotUniform()
     #Create model
     input_1 = Input(shape = (input_shape,))
-    hidden_1 = Dense(n, activation=activation)(input_1)
+    hidden_1 = ENNLayer(n, activation=activation)(input_1)
     output_1 = Dense(num_class, activation='softmax', kernel_initializer=initializer)(hidden_1)
     model = Model(inputs=input_1, outputs=output_1)
     model.compile(optimizer=Adam(learning_rate=lr),
               loss = tf.keras.losses.CategoricalCrossentropy(),
               metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
+
     return model    
 
 if __name__ == "__main__":
@@ -88,15 +95,12 @@ if __name__ == "__main__":
     y_train_val = train_df['Class']
     num_class = len(pd.unique(y_train_val))
     input_shape = X_train_val.shape[-1]
-    
 
     X_test = test_df.drop(columns = 'Class')
     y_test = pd.get_dummies(test_df['Class'])
 
-    
     # input nodes
-    n = num_enn*num_class*2
-
+    n = num_enn*num_class
 
     time_data = []
     accuracy_data = []
@@ -109,14 +113,15 @@ if __name__ == "__main__":
     for i in range(num_ex):
         print('training phase')
         X_train,  X_validation, y_train, y_validation = train_test_split(X_train_val, y_train_val, test_size=train_test_ratio, stratify=y_train_val)
-
+        
         y_train = pd.get_dummies(y_train)
         y_validation = pd.get_dummies(y_validation)
-
         # generator
         train_generator = DataFrameGenerator(X_train, y_train, batch_size=BATCH_SIZE, shuffle=True)
         validation_generator = DataFrameGenerator(X_validation, y_validation, batch_size=BATCH_SIZE)
         test_generator = DataFrameGenerator(X_test, y_test, batch_size=BATCH_SIZE)
+
+        
 
         model = create_model(n, input_shape, num_class, activation, lr)
         checkpoint = ModelCheckpoint(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', verbose=0, monitor='val_categorical_accuracy',save_best_only=True, mode='max')
@@ -126,7 +131,7 @@ if __name__ == "__main__":
         history = model.fit(
             train_generator,
             epochs=epochs,
-            verbose=0,
+            verbose=1,
             validation_data=validation_generator,
             callbacks=[checkpoint])
         end = time.time() 
@@ -134,7 +139,7 @@ if __name__ == "__main__":
 
         print('testing phase')
         # evaluation
-        classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras')
+        classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'ENNLayer': ENNLayer})
         entropy, acc, pre, rec, f1 = classification_model.evaluate(test_generator)
         accuracy_data.append(acc)
         precision_data.append(pre)
@@ -144,7 +149,7 @@ if __name__ == "__main__":
 
         tf.keras.backend.clear_session()
         del model, classification_model, train_generator, validation_generator, test_generator
-
+    
     result_dict = {
         "time_used_to_train (s)": time_data,
         "test_accuracy": accuracy_data,

@@ -94,9 +94,9 @@ def cluster_generator(X,n_components = 10,random_state = None,verbose = True):
     if verbose:
         end = time.time()
         print('Cluster Creation finished at:', end - start)
-
     centers = np.array([t[0] for t in output])
     X_cluster = np.array([t[1] for t in output])
+    
 
     return centers, X_cluster
 

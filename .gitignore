@@ -1,2 +1,3 @@
 ResNet18/CIFAR10/extracted_features_test.csv
 *.csv
+*.keras
