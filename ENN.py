@@ -27,13 +27,13 @@ from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
 num_enn = 10
-num_ex = 5 # number of repeated experiments
+num_ex = 9 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
-train_test_splitted = True # if train test is splitted
+train_test_splitted = False # if train test is splitted
 
-data = 'CIFAR10'
-backbone_model = 'VGG16'
+data = 'Concrete'
+backbone_model = 'ResNet18'
 classification_neuron = 'ENN'
 
 data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
