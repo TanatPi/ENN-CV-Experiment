@@ -94,8 +94,8 @@ def cluster_generator(X,n_components = 10,random_state = None,verbose = True):
     if verbose:
         end = time.time()
         print('Cluster Creation finished at:', end - start)
-    centers = np.array([t[0] for t in output])
-    X_cluster = np.array([t[1] for t in output])
+    centers = [t[0] for t in output]
+    X_cluster = [t[1] for t in output]
     
 
     return centers, X_cluster
@@ -187,7 +187,7 @@ def wd_generator(X,X_cluster, set_of_centers, max_weight_ratio = 50, verbose = T
     if verbose:
         start = time.time()
 
-    set_of_wd = Parallel(n_jobs=-1)(delayed(wd_calculation)(X[i],X_cluster[i],len(X), set_of_centers[i], max_weight_ratio) for i in range(len(X)))
+    set_of_wd = Parallel(n_jobs=-1)(delayed(wd_calculation)(X[i],X_cluster[i],len(X), np.array(set_of_centers[i]), max_weight_ratio) for i in range(len(X)))
     if verbose:
         end = time.time()
         print('Weight generation finised at:', end-start)
@@ -207,8 +207,8 @@ def bias_cal(X_i,X_cluster, i, centers, wd, alpha = 0.):
     intracluster_ellipse = np.matmul((transformed_X_ij**2),(wd[i]).T)
         
     #max_intraclass = np.max(intraclass_ellipse[intraclass_ellipse<min_other])
-    max_intracluster = np.max(intracluster_ellipse) + alpha*np.max(intracluster_ellipse)
-    max_intraclass = np.max(intraclass_ellipse) + alpha*np.max(intraclass_ellipse)
+    max_intracluster = np.max(intracluster_ellipse)
+    max_intraclass = np.max(intraclass_ellipse)
 
 
 
@@ -217,7 +217,7 @@ def bias_cal(X_i,X_cluster, i, centers, wd, alpha = 0.):
             print('invalid alpha')
             sys.exit(1)
         else:
-            return alpha*max_intracluster+(1-alpha)*max_intracluster
+            return alpha*max_intraclass+(1-alpha)*max_intracluster
     else:
         return max_intracluster
 
@@ -242,7 +242,7 @@ def bias_gen(X,X_cluster, working_label, i,set_of_centers,set_of_wd,bias_cal_par
     X_cluster_i = deepcopy(X_cluster)[working_label[i]]
     X_copy.pop(working_label[i])
 
-    return bias_calculator(X_i,X_cluster_i, set_of_centers[i], set_of_wd[i],bias_cal_parallel=bias_cal_parallel, alpha = alpha)
+    return bias_calculator(X_i,X_cluster_i, np.array(set_of_centers[i]), set_of_wd[i],bias_cal_parallel=bias_cal_parallel, alpha = alpha)
 def bias_generator(X,X_cluster, set_of_centers, set_of_wd,working_label, verbose = True, alpha = 0.):
     if verbose:
         start = time.time()

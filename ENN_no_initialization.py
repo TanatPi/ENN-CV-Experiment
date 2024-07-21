@@ -26,13 +26,13 @@ os.chdir('E:\Work\DS\Project\CNN Experiment')
 from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
-num_enn = 2
-num_ex = 10 # number of repeated experiments
+num_enn = 10
+num_ex = 1 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
-train_test_splitted = True # if train test is splitted
+train_test_splitted = False # if train test is splitted
 
-data = 'CIFAR100'
+data = 'Concrete'
 backbone_model = 'ResNet18'
 classification_neuron = 'ENN_no_initialization'
 
@@ -87,6 +87,7 @@ if __name__ == "__main__":
         
     else:
         df = pd.read_csv(data_directory + 'extracted_features.csv')
+        train_df, test_df = train_test_split(df, test_size=1/6, random_state = 42)
 
     # Split X and y and get validation set
     train_test_ratio = test_df.shape[0]/train_df.shape[0]

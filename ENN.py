@@ -26,14 +26,14 @@ os.chdir('E:\Work\DS\Project\CNN Experiment')
 from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
-num_enn = 2
-num_ex = 10 # number of repeated experiments
+num_enn = 10
+num_ex = 5 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
 train_test_splitted = True # if train test is splitted
 
-data = 'CIFAR100'
-backbone_model = 'ResNet18'
+data = 'CIFAR10'
+backbone_model = 'VGG16'
 classification_neuron = 'ENN'
 
 data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
@@ -93,6 +93,7 @@ if __name__ == "__main__":
         
     else:
         df = pd.read_csv(data_directory + 'extracted_features.csv')
+        train_df, test_df = train_test_split(df, test_size=1/6, random_state = 42)
 
     # Split X and y and get validation set
     train_test_ratio = test_df.shape[0]/train_df.shape[0]
@@ -107,6 +108,7 @@ if __name__ == "__main__":
 
     # input nodes
     n = num_enn*num_class
+    print('number of nodes = ', n)
 
     time_data = []
     accuracy_data = []
@@ -121,7 +123,7 @@ if __name__ == "__main__":
         X_train,  X_validation, y_train, y_validation = train_test_split(X_train_val, y_train_val, test_size=train_test_ratio, stratify=y_train_val)
 
         # ENN initialization
-        ENN_initialization = EllipsoidLayer(n_components=num_enn, max_iter = 1, max_weight_ratio = 5000,alpha = 0)
+        ENN_initialization = EllipsoidLayer(n_components=num_enn, max_iter = 1, max_weight_ratio = 5000,alpha = 0.)
         ENN_initialization.fit(X_train,y_train)
         
         y_train = pd.get_dummies(y_train)
@@ -134,9 +136,10 @@ if __name__ == "__main__":
         
 
         model = create_model(n, input_shape, num_class, activation, lr, ENN_initialization)
+
+
         checkpoint = ModelCheckpoint(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', verbose=0, monitor='val_categorical_accuracy',save_best_only=True, mode='max')
 
-        
         start = time.time()
         history = model.fit(
             train_generator,
@@ -169,4 +172,7 @@ if __name__ == "__main__":
         "test_crossentropy": crossentropy_data,
     }
 
-    export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
+    if activation is not None:
+        export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
+    else:
+        export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_None_numberofnodes_{n}_' +'results.json.', result_dict)
