@@ -27,13 +27,13 @@ from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
 num_enn = 10
-num_ex = 9 # number of repeated experiments
+num_ex = 5 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
-train_test_splitted = False # if train test is splitted
+train_test_splitted = True # if train test is splitted
 
-data = 'Concrete'
-backbone_model = 'ResNet18'
+data = 'CIFAR10'
+backbone_model = 'VGG16'
 classification_neuron = 'ENN'
 
 data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
@@ -110,16 +110,16 @@ if __name__ == "__main__":
     n = num_enn*num_class
     print('number of nodes = ', n)
 
-    time_data = []
-    accuracy_data = []
-    precision_data = []
-    recall_data = []
-    F1_data = []
-    crossentropy_data = []
-
     
     for i in range(num_ex):
-        print('training phase')
+        time_data = []
+        accuracy_data = []
+        precision_data = []
+        recall_data = []
+        F1_data = []
+        crossentropy_data = []
+
+        print('training phase', i)
         X_train,  X_validation, y_train, y_validation = train_test_split(X_train_val, y_train_val, test_size=train_test_ratio, stratify=y_train_val)
 
         # ENN initialization
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         end = time.time() 
         time_data.append(end-start)
 
-        print('testing phase')
+        print('testing phase', i)
         # evaluation
         classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'ENNLayer': ENNLayer})
         entropy, acc, pre, rec, f1 = classification_model.evaluate(test_generator)
@@ -163,16 +163,16 @@ if __name__ == "__main__":
         tf.keras.backend.clear_session()
         del model, classification_model, train_generator, validation_generator, test_generator
     
-    result_dict = {
-        "time_used_to_train (s)": time_data,
-        "test_accuracy": accuracy_data,
-        "test_precision": precision_data,
-        "test_recall": recall_data,
-        "test_F1": F1_data,
-        "test_crossentropy": crossentropy_data,
-    }
+        result_dict = {
+            "time_used_to_train (s)": time_data,
+            "test_accuracy": accuracy_data,
+            "test_precision": precision_data,
+            "test_recall": recall_data,
+            "test_F1": F1_data,
+            "test_crossentropy": crossentropy_data,
+        }
 
-    if activation is not None:
-        export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
-    else:
-        export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_None_numberofnodes_{n}_' +'results.json.', result_dict)
+        if activation is not None:
+            export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
+        else:
+            export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_None_numberofnodes_{n}_' +'results.json.', result_dict)
