@@ -48,3 +48,6 @@ class DataFrameGenerator(tf.keras.utils.Sequence):
         """
         if self.shuffle:
             np.random.shuffle(self.indices)
+
+
+
