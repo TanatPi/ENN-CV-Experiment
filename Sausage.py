@@ -20,23 +20,23 @@ warnings.filterwarnings("ignore")
 
 print(os.getcwd())
 #os.chdir('/home/tanat_pi/CNN Protoype/')
-#os.chdir('W:\DS\Project\CNN Experiment')
-os.chdir('E:\Work\DS\Project\CNN Experiment')
+os.chdir('W:\DS\Project\CNN Experiment')
+#os.chdir('E:\Work\DS\Project\CNN Experiment')
 
 from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
-num_enn = 10
-num_ex = 10 # number of repeated experiments
+num_enn = 2
+num_ex = 4 # number of repeated experiments
 lr = 0.0002 # learning rate
 train_test_splitted = True # if train test is splitted
 
-data = 'CIFAR10'
+data = 'CIFAR100'
 backbone_model = 'ResNet18'
-classification_neuron = 'ENN'
+classification_neuron = 'Sausage'
 
-data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
-#data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
+#data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
+data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 
 
 BATCH_SIZE = 64 # train batch size (64 due to hardware limitation and accuracy is not a goal)
@@ -173,7 +173,6 @@ if __name__ == "__main__":
             "test_crossentropy": crossentropy_data,
         }
 
-        if activation is not None:
-            export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
-        else:
-            export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_None_numberofnodes_{n}_' +'results.json.', result_dict)
+        
+
+        export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_GK_numberofnodes_{n}_' +'results.json.', result_dict)
