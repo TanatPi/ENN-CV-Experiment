@@ -165,9 +165,9 @@ def wd_calculation(X_i,X_cluster_i, num_class, centers, max_weight_ratio = 50):
     wd = np.ones((centers.shape[0],centers.shape[-1]))
     X_i = check_data_type_X_npar(X_i)
     for i,j in enumerate(np.unique(X_cluster_i)):
+         X_ij = X_i[X_cluster_i == j]
         if np.unique(X_ij,axis = 0).shape[0] > 1:
         # check if X_ij contains more than 1 unique points
-            X_ij = X_i[X_cluster_i == j]
             transform_X_ij = X_ij - centers[i]
             max_dis = np.max(transform_X_ij,axis = 0) - np.min(transform_X_ij,axis = 0) # max difference for each axes
             max_dis[max_dis < np.max(max_dis)/max_weight_ratio] = np.max(max_dis)/max_weight_ratio # divide by Zero prevention
