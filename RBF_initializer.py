@@ -70,7 +70,7 @@ def cluster_gen(X_i,n_components = 10,random_state = None):
         return cache
                 
     elif len(X_i) == 1:
-        cache = np.array([-1])                         
+        cache = np.array([X_i])                         
         return cache
     
     elif len(X_i) == 0 :
