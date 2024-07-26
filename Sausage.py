@@ -20,8 +20,8 @@ warnings.filterwarnings("ignore")
 
 print(os.getcwd())
 #os.chdir('/home/tanat_pi/CNN Protoype/')
-os.chdir('W:\DS\Project\CNN Experiment')
-#os.chdir('E:\Work\DS\Project\CNN Experiment')
+#os.chdir('W:\DS\Project\CNN Experiment')
+os.chdir('E:\Work\DS\Project\CNN Experiment')
 
 from custom_generator_and_checkpoint import DataFrameGenerator
 
@@ -31,12 +31,12 @@ num_ex = 4 # number of repeated experiments
 lr = 0.0002 # learning rate
 train_test_splitted = True # if train test is splitted
 
-data = 'CIFAR100'
+data = 'CIFAR10'
 backbone_model = 'ResNet18'
 classification_neuron = 'Sausage'
 
-#data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
-data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
+data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
+#data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 
 
 BATCH_SIZE = 64 # train batch size (64 due to hardware limitation and accuracy is not a goal)
