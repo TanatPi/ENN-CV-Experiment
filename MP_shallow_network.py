@@ -16,14 +16,14 @@ import json
 
 
 #os.chdir('/home/tanat_pi/CNN Protoype/')
-#os.chdir('W:\DS\Project\CNN Protoype')
-os.chdir('E:\Work\DS\Project\CNN Experiment')
+os.chdir('W:\DS\Project\CNN Experiment')
+#os.chdir('E:\Work\DS\Project\CNN Experiment')
 
 
-epochs = 200 # maximum epoch (set at 20 for paper)
+epochs = 300 # maximum epoch (set at 20 for paper)
 num_enn = 10
 n = num_enn*20
-num_ex = 6 # number of repeated experiments
+num_ex = 1 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
 BATCH_SIZE = 64
@@ -63,6 +63,7 @@ if __name__ == "__main__":
      for i in range(num_ex):
         time_data = []
         accuracy_data = []
+        top5_accuracy_data = []
         precision_data = []
         recall_data = []
         F1_data = []
@@ -126,7 +127,7 @@ if __name__ == "__main__":
 
         model = Model(inputs=inputs, outputs=output_1)
         model.compile(optimizer=Adam(learning_rate=lr), loss = tf.keras.losses.CategoricalCrossentropy(),
-                    metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
+                    metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.TopKCategoricalAccuracy(k=5),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
         model.summary()
 
         # Training the model with the train generator
@@ -144,18 +145,21 @@ if __name__ == "__main__":
         time_data.append(end-start)
         # Evaluation
         classification_model = load_model('test.keras')
-        entropy, acc, pre, rec, f1 = classification_model.evaluate(test_generator)
+        entropy, acc, acc5, pre, rec, f1 = classification_model.evaluate(test_generator)
         accuracy_data.append(acc)
+        top5_accuracy_data.append(acc5)
         precision_data.append(pre)
         recall_data.append(rec)
         F1_data.append(f1)
         crossentropy_data.append(entropy)
 
         del model, classification_model, train_generator, validation_generator, test_generator
+        tf.keras.backend.clear_session()
 
         result_dict = {
             "time_used_to_train (s)": time_data,
             "test_accuracy": accuracy_data,
+            "test_top5_accuracy": top5_accuracy_data,
             "test_precision": precision_data,
             "test_recall": recall_data,
             "test_F1": F1_data,

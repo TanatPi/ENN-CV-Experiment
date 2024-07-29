@@ -20,8 +20,8 @@ warnings.filterwarnings("ignore")
 
 print(os.getcwd())
 #os.chdir('/home/tanat_pi/CNN Protoype/')
-#os.chdir('W:\DS\Project\CNN Experiment')
-os.chdir('E:\Work\DS\Project\CNN Experiment')
+os.chdir('W:\DS\Project\CNN Experiment')
+#os.chdir('E:\Work\DS\Project\CNN Experiment')
 
 from custom_generator_and_checkpoint import DataFrameGenerator
 
@@ -36,11 +36,11 @@ data = 'CIFAR10'
 backbone_model = 'ResNet18'
 classification_neuron = 'ENN'
 
-data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
-#data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
+#data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
+data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 
 
-BATCH_SIZE = 64 # train batch size (64 due to hardware limitation and accuracy is not a goal)
+BATCH_SIZE = 50 # train batch size (64 due to hardware limitation and accuracy is not a goal)
 
 
 tf.keras.backend.clear_session()

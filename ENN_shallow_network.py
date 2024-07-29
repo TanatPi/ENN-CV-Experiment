@@ -16,14 +16,14 @@ import json
 
 
 #os.chdir('/home/tanat_pi/CNN Protoype/')
-#os.chdir('W:\DS\Project\CNN Protoype')
-os.chdir('E:\Work\DS\Project\CNN Experiment')
+os.chdir('W:\DS\Project\CNN Experiment')
+#os.chdir('E:\Work\DS\Project\CNN Experiment')
 
 
-epochs = 200 # maximum epoch (set at 20 for paper)
+epochs = 300 # maximum epoch (set at 20 for paper)
 num_enn = 10
 n = num_enn*10
-num_ex = 6 # number of repeated experiments
+num_ex = 10 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
 BATCH_SIZE = 64
@@ -181,6 +181,7 @@ if __name__ == "__main__":
         crossentropy_data.append(entropy)
 
         del model, classification_model, train_generator, validation_generator, test_generator
+        tf.keras.backend.clear_session()
 
         result_dict = {
             "time_used_to_train (s)": time_data,
