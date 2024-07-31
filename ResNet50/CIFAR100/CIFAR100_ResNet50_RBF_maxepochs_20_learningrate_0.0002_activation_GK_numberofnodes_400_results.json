@@ -1,0 +1,23 @@
+{
+    "time_used_to_train (s)": [
+        1949.6954448223114
+    ],
+    "test_accuracy": [
+        0.3122996687889099
+    ],
+    "test_top5_accuracy": [
+        0.700120210647583
+    ],
+    "test_precision": [
+        0.0
+    ],
+    "test_recall": [
+        0.0
+    ],
+    "test_F1": [
+        0.31229960918426514
+    ],
+    "test_crossentropy": [
+        3.0381369590759277
+    ]
+}
