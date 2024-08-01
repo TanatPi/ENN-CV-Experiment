@@ -25,15 +25,15 @@ os.chdir('W:\DS\Project\CNN Experiment')
 
 from custom_generator_and_checkpoint import DataFrameGenerator
 
-epochs = 20 # maximum epoch (set at 30 for paper)
-num_enn = 10
+epochs = 200 # maximum epoch (set at 30 for paper)
+num_enn = 2
 num_ex = 6 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
-train_test_splitted = False # if train test is splitted
+train_test_splitted = True # if train test is splitted
 
-data = 'Concrete'
-backbone_model = 'ResNet50'
+data = 'CIFAR100'
+backbone_model = 'ResNet18'
 classification_neuron = 'ENN_no_initialization'
 
 data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
@@ -77,8 +77,8 @@ def create_model(n, input_shape, num_class, activation, lr):
     model = Model(inputs=input_1, outputs=output_1)
     model.compile(optimizer=Adam(learning_rate=lr),
               loss = tf.keras.losses.CategoricalCrossentropy(),
-              metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
-
+              metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.TopKCategoricalAccuracy(k=5),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
+    
     return model    
 
 if __name__ == "__main__":
@@ -112,6 +112,7 @@ if __name__ == "__main__":
         recall_data = []
         F1_data = []
         crossentropy_data = []
+        top5_accuracy_data = []
 
         print('training phase', i+1)
         X_train,  X_validation, y_train, y_validation = train_test_split(X_train_val, y_train_val, test_size=train_test_ratio, stratify=y_train_val)
@@ -142,8 +143,9 @@ if __name__ == "__main__":
         print('testing phase', i+1)
         # evaluation
         classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'ENNLayer': ENNLayer})
-        entropy, acc, pre, rec, f1 = classification_model.evaluate(test_generator)
+        entropy, acc, acc5, pre, rec, f1 = classification_model.evaluate(test_generator)
         accuracy_data.append(acc)
+        top5_accuracy_data.append(acc5)
         precision_data.append(pre)
         recall_data.append(rec)
         F1_data.append(f1)
@@ -155,10 +157,12 @@ if __name__ == "__main__":
         result_dict = {
             "time_used_to_train (s)": time_data,
             "test_accuracy": accuracy_data,
+            "test_top5_accuracy": top5_accuracy_data,
             "test_precision": precision_data,
             "test_recall": recall_data,
             "test_F1": F1_data,
             "test_crossentropy": crossentropy_data,
-        }
+        }   
+
 
         export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
