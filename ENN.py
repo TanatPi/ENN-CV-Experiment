@@ -26,13 +26,13 @@ os.chdir('W:\DS\Project\CNN Experiment')
 from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
-num_enn = 2
+num_enn = 10
 num_ex = 3 # number of repeated experiments
 lr = 0.0002 # learning rate
 activation = 'tanh' # activation value
 train_test_splitted = True # if train test is splitted
 
-data = 'CIFAR100'
+data = 'CIFAR10'
 backbone_model = 'ResNet18'
 classification_neuron = 'ENN'
 

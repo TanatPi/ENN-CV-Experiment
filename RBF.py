@@ -32,7 +32,7 @@ lr = 0.0002 # learning rate
 train_test_splitted = True # if train test is splitted
 
 data = 'CIFAR100'
-backbone_model = 'ResNet50'
+backbone_model = 'ResNet18'
 classification_neuron = 'RBF'
 
 #data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
