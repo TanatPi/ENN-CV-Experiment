@@ -11,8 +11,8 @@ import time
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 import json
-from Ellipsoidal_layer_V5 import EllipsoidLayer
-from custom_ENN_layerV2 import ENNLayer
+from RBF_Mahalanobis_initializer import RBF_centers
+from custom_RBF_Mahalanobis_neuron import MahalanobisRBFLayer
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -25,22 +25,21 @@ os.chdir('W:\DS\Project\CNN Experiment')
 
 from custom_generator_and_checkpoint import DataFrameGenerator
 
-epochs = 200 # maximum epoch (set at 30 for paper)
+epochs = 20 # maximum epoch (set at 30 for paper)
 num_enn = 1
-num_ex = 1 # number of repeated experiments
+num_ex = 10 # number of repeated experiments
 lr = 0.0002 # learning rate
-activation = 'tanh' # activation value
-train_test_splitted = True # if train test is splitted
+train_test_splitted = False # if train test is splitted
 
-data = 'CIFAR10'
+data = 'Texture'
 backbone_model = 'ResNet18'
-classification_neuron = 'ENN'
+classification_neuron = 'RBF_Mahalanobis'
 
 #data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 
 
-BATCH_SIZE = 64 # train batch size (64 due to hardware limitation and accuracy is not a goal)
+BATCH_SIZE = 64 # train batch size (64 due to hardware limitation and accuracy is not a goal)     
 
 
 tf.keras.backend.clear_session()
@@ -70,22 +69,23 @@ def export_to_json(file_path, new_data):
         with open(file_path, 'w') as file:
             json.dump(new_data, file, indent=4)
 
-def create_model(n, input_shape, num_class, activation, lr, ENN_initialization):
+
+def create_model(n, input_shape, num_class, lr,RBF_initialization):
     initializer = tf.keras.initializers.GlorotUniform()
     #Create model
     input_1 = Input(shape = (input_shape,))
-    hidden_1 = ENNLayer(n, activation=activation)(input_1)
+    hidden_1 = MahalanobisRBFLayer(n)(input_1)
     output_1 = Dense(num_class, activation='softmax', kernel_initializer=initializer)(hidden_1)
     model = Model(inputs=input_1, outputs=output_1)
     model.compile(optimizer=Adam(learning_rate=lr),
               loss = tf.keras.losses.CategoricalCrossentropy(),
               metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.TopKCategoricalAccuracy(k=5),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
-    
+    model.summary()
     for i in range(len(model.weights)):
         model.weights[i]._handle_name = model.weights[i].name + "_" + str(i)
 
-    ENN_weights = ([ENN_initialization.layer_1.biases,ENN_initialization.layer_1.weights,ENN_initialization.layer_1.centers])
-    model.layers[1].set_weights(ENN_weights)
+    RBF_weights = ([RBF_initialization.layer_1.centers,RBF_initialization.layer_1.L])
+    model.layers[1].set_weights(RBF_weights)
 
     return model    
 
@@ -100,7 +100,6 @@ if __name__ == "__main__":
 
     # Split X and y and get validation set
     train_test_ratio = test_df.shape[0]/train_df.shape[0]
-
     X_train_val = train_df.drop(columns = 'Class')
     y_train_val = train_df['Class']
     num_class = len(pd.unique(y_train_val))
@@ -123,23 +122,21 @@ if __name__ == "__main__":
         crossentropy_data = []
         top5_accuracy_data = []
 
-        print('training phase', i)
+        print('training phase', i+1)
         X_train,  X_validation, y_train, y_validation = train_test_split(X_train_val, y_train_val, test_size=train_test_ratio, stratify=y_train_val)
 
-        # ENN initialization
-        ENN_initialization = EllipsoidLayer(n_components=num_enn, max_iter = 1, max_weight_ratio = 5000,alpha = 0.)
-        ENN_initialization.fit(X_train,y_train)
-        
+        # initialization
+        RBF_initialization = RBF_centers(n_components=num_enn)
+        RBF_initialization.fit(X_train,y_train)
+
         y_train = pd.get_dummies(y_train)
         y_validation = pd.get_dummies(y_validation)
         # generator
         train_generator = DataFrameGenerator(X_train, y_train, batch_size=BATCH_SIZE, shuffle=True)
         validation_generator = DataFrameGenerator(X_validation, y_validation, batch_size=BATCH_SIZE)
         test_generator = DataFrameGenerator(X_test, y_test, batch_size=BATCH_SIZE)
-
         
-
-        model = create_model(n, input_shape, num_class, activation, lr, ENN_initialization)
+        model = create_model(n, input_shape, num_class, lr,RBF_initialization)
 
 
         checkpoint = ModelCheckpoint(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', verbose=0, monitor='val_categorical_accuracy',save_best_only=True, mode='max')
@@ -154,9 +151,9 @@ if __name__ == "__main__":
         end = time.time() 
         time_data.append(end-start)
 
-        print('testing phase', i)
+        print('testing phase', i+1)
         # evaluation
-        classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'ENNLayer': ENNLayer})
+        classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'RBFLayer': MahalanobisRBFLayer})
         entropy, acc, acc5, pre, rec, f1 = classification_model.evaluate(test_generator)
         accuracy_data.append(acc)
         top5_accuracy_data.append(acc5)
@@ -178,7 +175,7 @@ if __name__ == "__main__":
             "test_crossentropy": crossentropy_data,
         }   
 
-        if activation is not None:
-            export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_' + activation + f'_numberofnodes_{n}_' +'results.json.', result_dict)
-        else:
-            export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_None_numberofnodes_{n}_' +'results.json.', result_dict)
+
+        
+
+        export_to_json(data_directory + data + '_' + backbone_model + '_' + classification_neuron + f'_maxepochs_{epochs}_learningrate_{lr}_activation_GK_numberofnodes_{n}_' +'results.json.', result_dict)
