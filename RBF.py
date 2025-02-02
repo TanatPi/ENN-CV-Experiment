@@ -86,7 +86,7 @@ def create_model(n, input_shape, num_class, lr,RBF_initialization):
 
     RBF_weights = ([RBF_initialization.layer_1.centers,model.layers[1].get_weights()[1]])
     model.layers[1].set_weights(RBF_weights)
-
+    model.summary()
     return model    
 
 if __name__ == "__main__":

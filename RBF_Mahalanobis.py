@@ -29,9 +29,9 @@ epochs = 20 # maximum epoch (set at 30 for paper)
 num_enn = 1
 num_ex = 10 # number of repeated experiments
 lr = 0.0002 # learning rate
-train_test_splitted = False # if train test is splitted
+train_test_splitted = True # if train test is splitted
 
-data = 'Texture'
+data = 'CIFAR10'
 backbone_model = 'ResNet18'
 classification_neuron = 'RBF_Mahalanobis'
 
