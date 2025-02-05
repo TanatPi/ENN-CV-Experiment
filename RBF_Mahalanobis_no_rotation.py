@@ -11,8 +11,8 @@ import time
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 import json
-from RBF_Modified_initializer import RBF_centers
-from custom_RBF_Modified_neuron import RBFLayer
+from RBF_Mahalanobis_no_rotation_initializer import RBF_centers
+from custom_RBF_Mahalanobis_neuron_no_rotation import MahalanobisRBFLayer
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -26,14 +26,14 @@ os.chdir('W:\DS\Project\CNN Experiment')
 from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
-num_enn = 2
+num_enn = 10
 num_ex = 6 # number of repeated experiments
 lr = 0.0002 # learning rate
 train_test_splitted = True # if train test is splitted
 
-data = 'CIFAR100'
-backbone_model = 'VGG16'
-classification_neuron = 'RBF_modified'
+data = 'CIFAR10'
+backbone_model = 'ResNet18'
+classification_neuron = 'RBF_Mahalanobis_no_rotation'
 
 #data_directory = 'E:/Work/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
 data_directory = 'W:/DS/Project/CNN Experiment/' + backbone_model + '/' + data + '/' # Data directory
@@ -74,19 +74,18 @@ def create_model(n, input_shape, num_class, lr,RBF_initialization):
     initializer = tf.keras.initializers.GlorotUniform()
     #Create model
     input_1 = Input(shape = (input_shape,))
-    hidden_1 = RBFLayer(n)(input_1)
+    hidden_1 = MahalanobisRBFLayer(n, R = RBF_initialization.layer_1.R)(input_1)
     output_1 = Dense(num_class, activation='softmax', kernel_initializer=initializer)(hidden_1)
     model = Model(inputs=input_1, outputs=output_1)
     model.compile(optimizer=Adam(learning_rate=lr),
               loss = tf.keras.losses.CategoricalCrossentropy(),
               metrics = [tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.TopKCategoricalAccuracy(k=5),tf.keras.metrics.Precision(),tf.keras.metrics.Recall(),tf.keras.metrics.F1Score(average = 'micro')])
-    
+    model.summary()
     for i in range(len(model.weights)):
         model.weights[i]._handle_name = model.weights[i].name + "_" + str(i)
-
-    RBF_weights = ([RBF_initialization.layer_1.centers,RBF_initialization.layer_1.betas])
+    RBF_weights = ([RBF_initialization.layer_1.centers,RBF_initialization.layer_1.D])
     model.layers[1].set_weights(RBF_weights)
-    model.summary()
+
     return model    
 
 if __name__ == "__main__":
@@ -153,7 +152,7 @@ if __name__ == "__main__":
 
         print('testing phase', i+1)
         # evaluation
-        classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'RBFLayer': RBFLayer})
+        classification_model = load_model(data_directory + data + '_' + backbone_model + '_' + classification_neuron + '_' +  f'epochs_{epochs:02d}.keras', custom_objects={'RBFLayer': MahalanobisRBFLayer})
         entropy, acc, acc5, pre, rec, f1 = classification_model.evaluate(test_generator)
         accuracy_data.append(acc)
         top5_accuracy_data.append(acc5)

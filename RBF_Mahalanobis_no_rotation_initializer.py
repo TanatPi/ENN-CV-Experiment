@@ -50,60 +50,62 @@ def check_data_type_y_df(y):
 
 ####Define neurons layer class####
 class RBF_neurons:
-  def __init__(self,centers = [], beta = []):
+  def __init__(self,centers = [], R = [], D = []):
     self.centers = np.vstack(centers)
-    self.betas = np.vstack(beta)
+    self.R = np.vstack(R)
+    self.D = np.vstack(D)
 
 
 
 ####Intra-class clustering algorithm####
 from sklearn.cluster import KMeans
 def intraclass_cluster(X_i, n_components=10, epsilon=1e-3,random_state = None):
-    cluster = KMeans(n_clusters = n_components,random_state = random_state)
+    cluster = KMeans(n_clusters=n_components, random_state=random_state)
     cluster.fit(X_i)
     centers = cluster.cluster_centers_
-
-    # Compute covariance matrix and Cholesky factor L for each cluster
     feature_dim = X_i.shape[1]
-    beta = np.zeros((n_components, feature_dim))
+    # Initialize matrices for rotation and diagonal components
+    rotation_matrices = np.zeros((n_components, feature_dim, feature_dim))
+    diagonal_matrices = np.zeros((n_components, feature_dim))
 
     for i in range(n_components):
         # Get points assigned to this cluster
         cluster_points = X_i[cluster.labels_ == i]
         
-        # If not enough points, set to spherical
+        # If not enough points, set rotation and diagonal to identity and ones
         if len(cluster_points) < 2:
-            beta[i,:] = np.ones(feature_dim)
+            rotation_matrices[i] = np.eye(feature_dim)
+            diagonal_matrices[i] = np.ones(feature_dim)
             continue
-        if np.unique(cluster_points,axis = 0).shape[0] > 1:
-            # check if cluster_points contains more than 1 unique points
-            transform_X_ij = cluster_points - centers[i]
-            max_dis = np.max(transform_X_ij,axis = 0) - np.min(transform_X_ij,axis = 0) # max difference for each axes
-            # divide by Zero prevention by set beta to the lowest available separation. If non, set to identity
-            if len(np.unique(max_dis)) > 1: # In case not all maxdis are zero
-                max_dis[max_dis == 0] = np.max(max_dis) 
-            else: # set beta to one
-                beta[i,:] = np.ones(feature_dim)
-                continue
-            beta[i,:] = 1/(max_dis)**2
-        # create scaler factor to match the mean of beta to those of abs(glorot uniform)
-        glorot_limit = np.sqrt(6/ (centers.shape[-1] + n_components*centers.shape[0]))
-        abs_glorot_mean = glorot_limit/2
-        abs_glorot_std = glorot_limit/np.sqrt(12)
-        mean_beta = np.mean(beta)
-        std_beta = np.std(beta)
-        scaled_beta = abs_glorot_std*(beta-mean_beta)/std_beta + abs_glorot_mean
-    return centers, scaled_beta
+
+        # Compute covariance matrix
+        cov_matrix = np.cov(cluster_points, rowvar=False)
+
+        # Regularize covariance for numerical stability
+        cov_matrix += epsilon * np.eye(feature_dim)
+
+        # Perform Eigenvalue Decomposition
+        eigvals, eigvecs = np.linalg.eigh(cov_matrix)
+
+        # Eigenvalues and eigenvectors are the diagonal matrix and rotation matrix
+        rotation_matrices[i] = eigvecs  # Rotation matrix (eigenvectors)
+        diagonal_matrices[i] = eigvals  # Diagonal matrix (eigenvalues)
+
+        # Ensure the diagonal matrix contains the inverse of eigenvalues for precision matrix
+        diagonal_matrices[i] = 1.0 / diagonal_matrices[i]
+
+    return centers, rotation_matrices, diagonal_matrices
+
 
 
 def cluster_gen(X_i,n_components = 10,random_state = None):
     if len(X_i) > 1:
-        cache, beta  = intraclass_cluster(X_i,n_components = n_components, random_state = random_state)
-        return cache, beta
+        cache, rotation_matrices, diagonal_matrices = intraclass_cluster(X_i,n_components = n_components, random_state = random_state)
+        return cache, rotation_matrices, diagonal_matrices
                 
     elif len(X_i) == 1:
-        cache, beta = np.array([X_i]), np.ones_like(X_i)                          
-        return cache, beta 
+        cache, rotation_matrices, diagonal_matrices = np.array([X_i]), np.array([1]), np.array([1])                              
+        return cache, rotation_matrices, diagonal_matrices
     
     elif len(X_i) == 0 :
         print('empty dataframe were put into the clustering step.')
@@ -117,9 +119,10 @@ def cluster_generator(X,n_components = 10,random_state = None,verbose = True):
         end = time.time()
         print('Cluster Creation finished at:', end - start)
     centers = [t[0] for t in output]
-    beta = [t[1] for t in output]
+    rotation_matrices = [t[1] for t in output]
+    diagonal_matrices = [t[2] for t in output]
 
-    return centers, beta
+    return centers, rotation_matrices, diagonal_matrices
 
 ####Label Encoder####
 def label_encoder(y):
@@ -144,9 +147,9 @@ def get_centers(X, y,n_components=10,random_state = None, verbose = True):
     X = data_divider(X, y)
     
     X_copy = deepcopy(X)
-    centers, beta = cluster_generator(X_copy, n_components=n_components, random_state = random_state, verbose = verbose)
+    centers, rotation_matrices, diagonal_matrices = cluster_generator(X_copy, n_components=n_components, random_state = random_state, verbose = verbose)
     
-    layer_1 = RBF_neurons(centers =  centers, beta = beta)
+    layer_1 = RBF_neurons(centers =  centers, R = rotation_matrices, D = diagonal_matrices)
     return layer_1
 
 

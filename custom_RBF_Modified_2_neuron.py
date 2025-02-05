@@ -14,18 +14,20 @@ class RBFLayer(tf.keras.layers.Layer):
         self.betas = self.add_weight(name='betas',
                                      shape=(self.units, input_shape[-1]),
                                      initializer='uniform',
-                                     trainable=True)
+                                     trainable=True,
+                                     constraint=tf.keras.constraints.NonNeg())
         self.gamma = self.add_weight(name='gamma',
                                      shape=(self.units,),
                                      initializer='ones',
-                                     trainable=True)
+                                     trainable=True,
+                                     constraint=tf.keras.constraints.NonNeg())
 
     def call(self, inputs):
         # Compute the RBF activations
         expanded_inputs = tf.expand_dims(inputs, axis=1)
         diff = expanded_inputs - self.centers
-        l2 = tf.math.reduce_sum(tf.math.square(self.betas * diff), axis=-1)
-        rbf_outputs = tf.math.exp(-l2)
+        l2 = tf.math.reduce_sum(tf.math.multiply(self.betas,tf.math.square(diff)), axis=-1)
+        rbf_outputs = tf.math.exp(- self.gamma * l2)
         return rbf_outputs
 
     def compute_output_shape(self, input_shape):

@@ -1,10 +1,9 @@
 import tensorflow as tf
 
 class RBFLayer(tf.keras.layers.Layer):
-    def __init__(self, units, gamma=None, **kwargs):
+    def __init__(self, units, **kwargs):
         super(RBFLayer, self).__init__(**kwargs)
         self.units = units
-        self.gamma = gamma
 
     def build(self, input_shape):
         self.centers = self.add_weight(name='centers',
@@ -12,11 +11,10 @@ class RBFLayer(tf.keras.layers.Layer):
                                        initializer='uniform',
                                        trainable=True)
         self.betas = self.add_weight(name='betas',
-                                     shape=(self.units,),
-                                     initializer='ones',
-                                     trainable=True)
-        if self.gamma is None:
-            self.gamma = 1.0 / (2.0 * tf.math.reduce_mean(tf.math.square(self.centers)))
+                                    shape=(self.units,),
+                                    initializer='ones',
+                                    trainable=True,
+                                    constraint=tf.keras.constraints.NonNeg())
 
     def call(self, inputs):
         # Compute the RBF activations
@@ -33,6 +31,5 @@ class RBFLayer(tf.keras.layers.Layer):
         config = super(RBFLayer, self).get_config()
         config.update({
             'units': self.units,
-            'gamma': self.gamma,
         })
         return config

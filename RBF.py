@@ -27,7 +27,7 @@ from custom_generator_and_checkpoint import DataFrameGenerator
 
 epochs = 20 # maximum epoch (set at 30 for paper)
 num_enn = 2
-num_ex = 6 # number of repeated experiments
+num_ex = 3 # number of repeated experiments
 lr = 0.0002 # learning rate
 train_test_splitted = True # if train test is splitted
 
